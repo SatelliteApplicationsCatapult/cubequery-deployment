@@ -7,7 +7,7 @@ This shows pulling in two library modules (sac_utils and data_cube_utilities) an
 ## Building and Running
 
 1) Clone this repo.
-1) Clone the cubequery repo.
+1) Clone the [cubequery repo](https://github.com/SatelliteApplicationsCatapult/cubequery).
 1) Edit the docker-compose.yml file to include the paths to your repos and set environment vars as you require.
 1) Edit the build.bat file to include the paths to your repos.
 1) Create the containers by running `build.bat`. If you are working on another platform the commands can be borrowed from that script.
