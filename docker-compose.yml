@@ -1,0 +1,35 @@
+version: '3'
+
+services:
+  redis-master:
+    image: redis
+    container_name: redis-master
+    ports:
+      - "6379:6379"
+    restart: always
+    command: redis-server --appendonly yes
+    volumes:
+      - ./redisdata:/data
+
+  cubequery-worker:
+    build: ./worker.Dockerfile
+    image: cubequery-deploy-worker:latest
+    environment:
+      - REDIS_URL=redis://redis-master:6379/
+    restart: always
+    volumes:
+      - ./processes:/processes/processes
+      - c:\\git\\cubequery:/app
+
+  cubequery-server:
+    build: ./server.Dockerfile
+    image: cubequery-deploy-server:latest
+    restart: always
+    environment:
+      - REDIS_URL=redis://redis-master:6379/
+      - APP_DEBUG=true
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./processes:/processes/processes
+      - c:\\git\\cubequery:/app
