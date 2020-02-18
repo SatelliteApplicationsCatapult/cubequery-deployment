@@ -6,6 +6,8 @@ from os import path
 from cubequery.tasks import CubeQueryTask, Parameter, DType
 from utils_dcal.data_cube_utilities.dc_utilities import write_geotiff_from_xr
 from utils_dcal.data_cube_utilities.dc_water_classifier import wofs_classify
+from utils_dcal.data_cube_utilities import import_export
+from sac_utils.createindices import NDVI
 from sac_utils.clean_mask import landsat_qa_clean_mask
 from sac_utils.createAOI import create_lat_lon
 from sac_utils.dc_mosaic import create_median_mosaic
@@ -117,23 +119,21 @@ class NDVIAnomaly(CubeQueryTask):
         result = []
         file_name = path.join(path_prefix, 'ndvi_baseline.tiff')
         ndvi_baseline_export = xr.DataArray.to_dataset(ndvi_baseline_composite, dim=None, name='ndvi_baseline')
-        write_geotiff_from_xr(file_name, ndvi_baseline_export, ["ndvi_baseline"], crs=projection,
-                              x_coord='x', y_coord='y')
+        import_export.export_xarray_to_geotiff(ndvi_baseline_export, file_name, bands = ["ndvi_baseline"], crs=projection, x_coord='x', y_coord='y')
         result.append(file_name)
 
         file_name = path.join(path_prefix, 'ndvi_analysis.tiff')
         ndvi_analysis_export = xr.DataArray.to_dataset(ndvi_analysis_composite, dim=None, name='ndvi_analysis')
-        write_geotiff_from_xr(path.join(path_prefix, 'ndvi_analysis.tiff'), ndvi_analysis_export, ["ndvi_analysis"], crs=projection,
-                              x_coord='x', y_coord='y')
+        import_export.export_xarray_to_geotiff(ndvi_analysis_export, file_name, bands = ["ndvi_analysis"], crs=projection, x_coord='x', y_coord='y')
         result.append(file_name)
 
         ndvi_anomaly = ndvi_analysis_composite - ndvi_baseline_composite
+        
         file_name = path.join(path_prefix, 'ndvi_anomaly.tiff')
         ndvi_anomaly_export = xr.DataArray.to_dataset(ndvi_anomaly, dim=None, name='ndvi_anomaly')
-        write_geotiff_from_xr(path.join(path_prefix, 'ndvi_anomaly.tiff'), ndvi_anomaly_export, ["ndvi_anomaly"], crs=projection,
-                              x_coord='x', y_coord='y')
+        import_export.export_xarray_to_geotiff(ndvi_anomaly_export, file_name, bands = ["ndvi_anomaly"], crs=projection, x_coord='x', y_coord='y')
         result.append(file_name)
-        
+
         return result
 
 

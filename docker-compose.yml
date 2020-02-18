@@ -30,6 +30,9 @@ services:
     image: cubequery-deploy-worker:latest
     environment:
       - REDIS_URL=redis://redis-master:6379/
+      - AWS_NO_SIGN_REQUEST=yes
+      - AWS_VIRTUAL_HOSTING=FALSE
+      - AWS_S3_ENDPOINT=s3-uk-1.sa-catapult.co.uk
     restart: always
     volumes:
       - ./processes:/processes/processes
