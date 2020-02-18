@@ -11,6 +11,20 @@ services:
     volumes:
       - ./redisdata:/data
 
+  datacube-database:
+    image: postgres
+    container_name: datacube-database
+    ports: 
+      - "5432:5432"
+    restart: always
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/01-init.sql
+      - ./dbdump.sql:/docker-entrypoint-initdb.d/02-dbdump.sql
+    environment:
+      - POSTGRES_DB=datacube
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=localuser1234
+
   cubequery-worker:
     build: ./worker.Dockerfile
     image: cubequery-deploy-worker:latest

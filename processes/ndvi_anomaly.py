@@ -1,6 +1,7 @@
 import numpy as np
 import xarray as xr
 import re
+from os import path
 
 from cubequery.tasks import CubeQueryTask, Parameter, DType
 from utils_dcal.data_cube_utilities.dc_utilities import write_geotiff_from_xr
@@ -27,21 +28,22 @@ class NDVIAnomaly(CubeQueryTask):
     description = "NDVI anomaly, showing changes in NDVI between two time periods."
 
     parameters = [
-        Parameter("aoi", DType.WKT, "Area of interest"),
-        Parameter("projection", DType.STRING, "projection to generate the output in."),
-        Parameter("baseline_start_date", DType.DATE, "Start date of the period to use for the baseline"),
-        Parameter("baseline_end_date", DType.DATE, "End date of the period to use for the baseline"),
-        Parameter("analysis_start_date", DType.DATE, "Start date of the period to use for the analysis"),
-        Parameter("analysis_end_date", DType.DATE, "End date of the period to use for the analysis"),
-        Parameter("platform_base", DType.STRING, "Satellite to use for the baseline"),
-        Parameter("platform_analysis", DType.STRING, "Satellite to use for the analysis"),
-        Parameter("res", DType.INT, "Pixel resution in meters"),
+        Parameter("aoi", "AOI", DType.WKT, "Area of interest"),
+        Parameter("projection", "projection", DType.STRING, "projection to generate the output in."),
+        Parameter("baseline_start_date", "Baseline Start Date", DType.DATE, "Start date of the period to use for the baseline"),
+        Parameter("baseline_end_date", "Baseline End Date", DType.DATE, "End date of the period to use for the baseline"),
+        Parameter("analysis_start_date", "Analysis Start Date", DType.DATE, "Start date of the period to use for the analysis"),
+        Parameter("analysis_end_date", "Analysis End Date", DType.DATE, "End date of the period to use for the analysis"),
+        Parameter("platform_base", "Baseline Satellite", DType.STRING, "Satellite to use for the baseline", ["SENTINEL_2", "LANDSAT_4", "LANDSAT_5", "LANDSAT_7", "LANDSAT_8"]),
+        Parameter("platform_analysis", "Analysis Satellite", DType.STRING, "Satellite to use for the analysis", ["SENTINEL_2", "LANDSAT_4", "LANDSAT_5", "LANDSAT_7", "LANDSAT_8"]),
+        Parameter("res", "resolution in meters", DType.INT, "Pixel resution in meters", [0, 500]),
     ]
 
     CubeQueryTask.cal_significant_kwargs(parameters)
 
     def generate_product(self,
                          dc,
+                         path_prefix,
                          aoi,
                          projection,
                          baseline_start_date,
@@ -66,7 +68,7 @@ class NDVIAnomaly(CubeQueryTask):
             'y': lat_extents,
             'x': lon_extents,
             'output_crs': projection,
-            'resolution': res
+            'resolution': [float(res), float(res)]
         }
 
         baseline_ds = dc.load(
@@ -112,19 +114,27 @@ class NDVIAnomaly(CubeQueryTask):
         ndvi_baseline_composite = NDVI(baseline_composite)
         ndvi_analysis_composite = NDVI(analysis_composite)
 
+        result = []
+        file_name = path.join(path_prefix, 'ndvi_baseline.tiff')
         ndvi_baseline_export = xr.DataArray.to_dataset(ndvi_baseline_composite, dim=None, name='ndvi_baseline')
-        write_geotiff_from_xr('ndvi_baseline.tiff', ndvi_baseline_export, ["ndvi_baseline"], crs=projection,
+        write_geotiff_from_xr(file_name, ndvi_baseline_export, ["ndvi_baseline"], crs=projection,
                               x_coord='x', y_coord='y')
+        result.append(file_name)
 
+        file_name = path.join(path_prefix, 'ndvi_analysis.tiff')
         ndvi_analysis_export = xr.DataArray.to_dataset(ndvi_analysis_composite, dim=None, name='ndvi_analysis')
-        write_geotiff_from_xr('ndvi_analysis.tiff', ndvi_analysis_export, ["ndvi_analysis"], crs=projection,
+        write_geotiff_from_xr(path.join(path_prefix, 'ndvi_analysis.tiff'), ndvi_analysis_export, ["ndvi_analysis"], crs=projection,
                               x_coord='x', y_coord='y')
+        result.append(file_name)
 
         ndvi_anomaly = ndvi_analysis_composite - ndvi_baseline_composite
-
+        file_name = path.join(path_prefix, 'ndvi_anomaly.tiff')
         ndvi_anomaly_export = xr.DataArray.to_dataset(ndvi_anomaly, dim=None, name='ndvi_anomaly')
-        write_geotiff_from_xr('ndvi_anomaly.tiff', ndvi_anomaly_export, ["ndvi_anomaly"], crs=projection,
+        write_geotiff_from_xr(path.join(path_prefix, 'ndvi_anomaly.tiff'), ndvi_anomaly_export, ["ndvi_anomaly"], crs=projection,
                               x_coord='x', y_coord='y')
+        result.append(file_name)
+        
+        return result
 
 
 def create_product_measurement(platform, all_measurements):
