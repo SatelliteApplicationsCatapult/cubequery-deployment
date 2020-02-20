@@ -1,6 +1,0 @@
-[submodule "data_cube_utilities"]
-	path = data_cube_utilities
-	url = https://github.com/ceos-seo/data_cube_utilities.git
-[submodule "sac_utils"]
-	path = sac_utils
-	url = https://github.com/SatelliteApplicationsCatapult/sac_utils
