@@ -4,13 +4,13 @@ import re
 from os import path
 
 from cubequery.tasks import CubeQueryTask, Parameter, DType
-from utils_dcal.data_cube_utilities.dc_utilities import write_geotiff_from_xr
-from utils_dcal.data_cube_utilities.dc_water_classifier import wofs_classify
-from utils_dcal.data_cube_utilities import import_export
-from sac_utils.createindices import NDVI
-from sac_utils.clean_mask import landsat_qa_clean_mask
-from sac_utils.createAOI import create_lat_lon
-from sac_utils.dc_mosaic import create_median_mosaic
+from datacube_utilities.dc_utilities import write_geotiff_from_xr
+from datacube_utilities.dc_water_classifier import wofs_classify
+from datacube_utilities import import_export
+from datacube_utilities.createindices import NDVI
+from datacube_utilities.clean_mask import landsat_qa_clean_mask
+from datacube_utilities.createAOI import create_lat_lon
+from datacube_utilities.dc_mosaic import create_median_mosaic
 
 
 class NDVIAnomaly(CubeQueryTask):
