@@ -9,6 +9,7 @@ services:
     restart: always
     command: redis-server --appendonly yes
     volumes:
+      # Redis data folder persistance.
       - ./redisdata:/data
 
   datacube-database:
@@ -18,6 +19,7 @@ services:
       - "5432:5432"
     restart: always
     volumes:
+      # mount database init scripts into the standard postgres container.
       - ./init.sql:/docker-entrypoint-initdb.d/01-init.sql
       - ./dbdump.sql:/docker-entrypoint-initdb.d/02-dbdump.sql
     environment:
@@ -34,6 +36,8 @@ services:
       - AWS_VIRTUAL_HOSTING=FALSE
       - AWS_S3_ENDPOINT=s3-uk-1.sa-catapult.co.uk
     restart: always
+    # Mount the code directories into the containers so restarting them is enough for most code changes.
+    # This is for development only. It should not be needed for a production deployment
     volumes:
       - ./processes:/processes/processes
       - c:\\git\\cubequery:/app
@@ -47,6 +51,8 @@ services:
       - APP_DEBUG=true
     ports:
       - "5000:5000"
+    # Mount the code directories into the containers so restarting them is enough for most code changes.
+    # This is for development only. It should not be needed for a production deployment
     volumes:
       - ./processes:/processes/processes
       - c:\\git\\cubequery:/app
