@@ -1,8 +1,6 @@
 from cubequery_server:latest
 
-USER root
 RUN /opt/conda/bin/pip install git+https://github.com/SatelliteApplicationsCatapult/datacube-utilities.git#egg=datacube_utilities
-USER celery:celery
 
 COPY processes/ /processes/processes
 COPY datacube.conf /etc/datacube.conf
