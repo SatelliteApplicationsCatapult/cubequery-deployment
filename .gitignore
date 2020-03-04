@@ -1,4 +1,7 @@
 redisdata/
+outputdata/
 
 */__pycache__/*
 *~
+
+dbdump.sql

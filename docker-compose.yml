@@ -36,6 +36,7 @@ services:
     restart: always
     volumes:
       - ./processes:/processes/processes
+      - ./outputdata:/data
       - c:\\git\\cubequery:/app
 
   cubequery-server:
@@ -49,4 +50,5 @@ services:
       - "5000:5000"
     volumes:
       - ./processes:/processes/processes
+      - ./outputdata:/data
       - c:\\git\\cubequery:/app
