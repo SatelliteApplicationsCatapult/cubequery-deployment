@@ -1,4 +1,8 @@
 redisdata/
+outputdata/
+pg_data/
 
 */__pycache__/*
 *~
+
+dbdump.sql
