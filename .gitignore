@@ -1,5 +1,6 @@
 redisdata/
 outputdata/
+pg_data/
 
 */__pycache__/*
 *~
