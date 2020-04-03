@@ -31,46 +31,94 @@ class NDVIAnomaly(CubeQueryTask):
 
     parameters = [
         Parameter("aoi", "AOI", DType.WKT, "Area of interest"),
-        Parameter("projection", "projection", DType.STRING, "projection to generate the output in."),
-        Parameter("baseline_start_date", "Baseline Start Date", DType.DATE, "Start date of the period to use for the baseline"),
-        Parameter("baseline_end_date", "Baseline End Date", DType.DATE, "End date of the period to use for the baseline"),
-        Parameter("analysis_start_date", "Analysis Start Date", DType.DATE, "Start date of the period to use for the analysis"),
-        Parameter("analysis_end_date", "Analysis End Date", DType.DATE, "End date of the period to use for the analysis"),
-        Parameter("platform_base", "Baseline Satellite", DType.STRING, "Satellite to use for the baseline", ["SENTINEL_2", "LANDSAT_4", "LANDSAT_5", "LANDSAT_7", "LANDSAT_8"]),
-        Parameter("platform_analysis", "Analysis Satellite", DType.STRING, "Satellite to use for the analysis", ["SENTINEL_2", "LANDSAT_4", "LANDSAT_5", "LANDSAT_7", "LANDSAT_8"]),
-        Parameter("res", "resolution in meters", DType.INT, "Pixel resution in meters", [0, 500]),
+        Parameter(
+            "projection",
+            "projection",
+            DType.STRING,
+            "projection to generate the output in.",
+        ),
+        Parameter(
+            "baseline_start_date",
+            "Baseline Start Date",
+            DType.DATE,
+            "Start date of the period to use for the baseline",
+        ),
+        Parameter(
+            "baseline_end_date",
+            "Baseline End Date",
+            DType.DATE,
+            "End date of the period to use for the baseline",
+        ),
+        Parameter(
+            "analysis_start_date",
+            "Analysis Start Date",
+            DType.DATE,
+            "Start date of the period to use for the analysis",
+        ),
+        Parameter(
+            "analysis_end_date",
+            "Analysis End Date",
+            DType.DATE,
+            "End date of the period to use for the analysis",
+        ),
+        Parameter(
+            "platform_base",
+            "Baseline Satellite",
+            DType.STRING,
+            "Satellite to use for the baseline",
+            ["SENTINEL_2", "LANDSAT_4", "LANDSAT_5", "LANDSAT_7", "LANDSAT_8"],
+        ),
+        Parameter(
+            "platform_analysis",
+            "Analysis Satellite",
+            DType.STRING,
+            "Satellite to use for the analysis",
+            ["SENTINEL_2", "LANDSAT_4", "LANDSAT_5", "LANDSAT_7", "LANDSAT_8"],
+        ),
+        Parameter(
+            "res",
+            "resolution in meters",
+            DType.INT,
+            "Pixel resution in meters",
+            [0, 500],
+        ),
     ]
 
     CubeQueryTask.cal_significant_kwargs(parameters)
 
-    def generate_product(self,
-                         dc,
-                         path_prefix,
-                         aoi,
-                         projection,
-                         baseline_start_date,
-                         baseline_end_date,
-                         analysis_start_date,
-                         analysis_end_date,
-                         platform_base,
-                         platform_analysis,
-                         res,
-                         **kwargs
-                         ):
+    def generate_product(
+        self,
+        dc,
+        path_prefix,
+        aoi,
+        projection,
+        baseline_start_date,
+        baseline_end_date,
+        analysis_start_date,
+        analysis_end_date,
+        platform_base,
+        platform_analysis,
+        res,
+        **kwargs,
+    ):
         lat_extents, lon_extents = create_lat_lon(aoi)
 
         all_measurements = ["green", "red", "blue", "nir", "swir1", "swir2"]
-        baseline_product, baseline_measurement = create_product_measurement(platform_base, all_measurements)
-        analysis_product, analysis_measurement = create_product_measurement(platform_analysis, all_measurements)
+        baseline_product, baseline_measurement = create_product_measurement(
+            platform_base, all_measurements
+        )
+        analysis_product, analysis_measurement = create_product_measurement(
+            platform_analysis, all_measurements
+        )
 
         baseline_time_period = (baseline_start_date, baseline_end_date)
         analysis_time_period = (analysis_start_date, analysis_end_date)
 
         query = {
-            'y': lat_extents,
-            'x': lon_extents,
-            'output_crs': projection,
-            'resolution': [float(res), float(res)]
+            "y": lat_extents,
+            "x": lon_extents,
+            "output_crs": projection,
+            "resolution": [float(res), float(res)],
         }
 
         baseline_ds = dc.load(
@@ -78,7 +126,7 @@ class NDVIAnomaly(CubeQueryTask):
             platform=platform_base,
             product=baseline_product,
             measurements=baseline_measurement,
-            **query
+            **query,
         )
 
         analysis_ds = dc.load(
@@ -86,16 +134,20 @@ class NDVIAnomaly(CubeQueryTask):
             platform=platform_analysis,
             product=analysis_product,
             measurements=analysis_measurement,
-            **query
+            **query,
         )
 
         if is_dataset_empty(baseline_ds):
-            raise Exception("DataCube Load returned an empty Dataset." +
-                            "Please check load parameters for Baseline Dataset!")
+            raise Exception(
+                "DataCube Load returned an empty Dataset."
+                + "Please check load parameters for Baseline Dataset!"
+            )
 
         if is_dataset_empty(analysis_ds):
-            raise Exception("DataCube Load returned an empty Dataset." +
-                            "Please check load parameters for Analysis Dataset!")
+            raise Exception(
+                "DataCube Load returned an empty Dataset."
+                + "Please check load parameters for Analysis Dataset!"
+            )
 
         baseline_clean_mask = landsat_qa_clean_mask(baseline_ds, platform_base)
         analysis_clean_mask = landsat_qa_clean_mask(analysis_ds, platform_analysis)
@@ -103,47 +155,83 @@ class NDVIAnomaly(CubeQueryTask):
         baseline_ds = baseline_ds.where(baseline_clean_mask)
         analysis_ds = analysis_ds.where(analysis_clean_mask)
 
-        baseline_composite = create_median_mosaic(baseline_ds, clean_mask=baseline_clean_mask)
-        analysis_composite = create_median_mosaic(analysis_ds, clean_mask=analysis_clean_mask)
+        baseline_composite = create_median_mosaic(
+            baseline_ds, clean_mask=baseline_clean_mask
+        )
+        analysis_composite = create_median_mosaic(
+            analysis_ds, clean_mask=analysis_clean_mask
+        )
 
-        water_class_base = wofs_classify(baseline_composite, mosaic=True, x_coord='x', y_coord='y').wofs
+        water_class_base = wofs_classify(
+            baseline_composite, mosaic=True, x_coord="x", y_coord="y"
+        ).wofs
         baseline_composite = baseline_composite.copy(deep=True).where(
-            (baseline_composite != np.nan) & (water_class_base == 0))
-        water_class_analy = wofs_classify(analysis_composite, mosaic=True, x_coord='x', y_coord='y').wofs
+            (baseline_composite != np.nan) & (water_class_base == 0)
+        )
+        water_class_analy = wofs_classify(
+            analysis_composite, mosaic=True, x_coord="x", y_coord="y"
+        ).wofs
         analysis_composite = analysis_composite.copy(deep=True).where(
-            (analysis_composite != np.nan) & (water_class_analy == 0))
+            (analysis_composite != np.nan) & (water_class_analy == 0)
+        )
 
         ndvi_baseline_composite = NDVI(baseline_composite)
         ndvi_analysis_composite = NDVI(analysis_composite)
 
         result = []
-        file_name = path.join(path_prefix, 'ndvi_baseline.tiff')
-        ndvi_baseline_export = xr.DataArray.to_dataset(ndvi_baseline_composite, dim=None, name='ndvi_baseline')
-        import_export.export_xarray_to_geotiff(ndvi_baseline_export, file_name, bands = ["ndvi_baseline"], crs=projection, x_coord='x', y_coord='y')
+        file_name = path.join(path_prefix, "ndvi_baseline.tiff")
+        ndvi_baseline_export = xr.DataArray.to_dataset(
+            ndvi_baseline_composite, dim=None, name="ndvi_baseline"
+        )
+        import_export.export_xarray_to_geotiff(
+            ndvi_baseline_export,
+            file_name,
+            bands=["ndvi_baseline"],
+            crs=projection,
+            x_coord="x",
+            y_coord="y",
+        )
         result.append(file_name)
 
-        file_name = path.join(path_prefix, 'ndvi_analysis.tiff')
-        ndvi_analysis_export = xr.DataArray.to_dataset(ndvi_analysis_composite, dim=None, name='ndvi_analysis')
-        import_export.export_xarray_to_geotiff(ndvi_analysis_export, file_name, bands = ["ndvi_analysis"], crs=projection, x_coord='x', y_coord='y')
+        file_name = path.join(path_prefix, "ndvi_analysis.tiff")
+        ndvi_analysis_export = xr.DataArray.to_dataset(
+            ndvi_analysis_composite, dim=None, name="ndvi_analysis"
+        )
+        import_export.export_xarray_to_geotiff(
+            ndvi_analysis_export,
+            file_name,
+            bands=["ndvi_analysis"],
+            crs=projection,
+            x_coord="x",
+            y_coord="y",
+        )
         result.append(file_name)
 
         ndvi_anomaly = ndvi_analysis_composite - ndvi_baseline_composite
-        
-        file_name = path.join(path_prefix, 'ndvi_anomaly.tiff')
-        ndvi_anomaly_export = xr.DataArray.to_dataset(ndvi_anomaly, dim=None, name='ndvi_anomaly')
-        import_export.export_xarray_to_geotiff(ndvi_anomaly_export, file_name, bands = ["ndvi_anomaly"], crs=projection, x_coord='x', y_coord='y')
+
+        file_name = path.join(path_prefix, "ndvi_anomaly.tiff")
+        ndvi_anomaly_export = xr.DataArray.to_dataset(
+            ndvi_anomaly, dim=None, name="ndvi_anomaly"
+        )
+        import_export.export_xarray_to_geotiff(
+            ndvi_anomaly_export,
+            file_name,
+            bands=["ndvi_anomaly"],
+            crs=projection,
+            x_coord="x",
+            y_coord="y",
+        )
         result.append(file_name)
 
         return result
 
 
 def create_product_measurement(platform, all_measurements):
-    
 
     if platform in ["SENTINEL_2"]:
-        product = 's2_esa_sr_granule'
+        product = "s2_esa_sr_granule"
         measurements = all_measurements + ["coastal_aerosol", "scene_classification"]
-    else :
+    else:
         product_match = re.search("LANDSAT_(\d)", platform)
         if product_match:
             product = f"ls{product_match.group(1)}_usgs_sr_scene"
@@ -157,7 +245,7 @@ def create_product_measurement(platform, all_measurements):
 def is_dataset_empty(ds: xr.Dataset) -> bool:
     checks_for_empty = [
         lambda x: len(x.dims) == 0,  # Dataset has no dimensions
-        lambda x: len(x.data_vars) == 0  # Dataset no variables
+        lambda x: len(x.data_vars) == 0,  # Dataset no variables
     ]
     for f in checks_for_empty:
         if f(ds):
