@@ -9,13 +9,12 @@ from cubequery.tasks import CubeQueryTask, Parameter, DType
 from datacube_utilities import import_export
 from datacube_utilities.createindices import NDVI
 from datacube_utilities.createAOI import create_lat_lon
+from datacube_utilities.masking import mask_good_quality
 from datacube_utilities.dc_mosaic import (
     create_median_mosaic,
     create_mean_mosaic,
     create_max_ndvi_mosaic,
 )
-
-from utils.masking import mask_good_quality
 
 
 class NDVIAnomaly(CubeQueryTask):
