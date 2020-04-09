@@ -36,10 +36,10 @@ class NDVIAnomaly(CubeQueryTask):
     parameters = [
         Parameter("aoi", "AOI", DType.WKT, "Area of interest"),
         Parameter(
-            "projection",
-            "projection",
+            "output_projection",
+            "Output Projection",
             DType.STRING,
-            "projection to generate the output in.",
+            "Projection to generate the output in.",
         ),
         Parameter(
             "baseline_start_date",
@@ -86,7 +86,7 @@ class NDVIAnomaly(CubeQueryTask):
             "Pixel resution in meters",
             [0, 500],
         ),
-        Parameter("crs", "CRS", DType.STRING, "CRS to use for the analysis"),
+        Parameter("aoi_crs", "AIO CRS", DType.STRING, "CRS of the Area of Interest"),
         Parameter(
             "mosaic_type",
             "Mosaic Type",
@@ -103,7 +103,7 @@ class NDVIAnomaly(CubeQueryTask):
         dc,
         path_prefix,
         aoi,
-        projection,
+        output_projection,
         baseline_start_date,
         baseline_end_date,
         analysis_start_date,
@@ -111,7 +111,7 @@ class NDVIAnomaly(CubeQueryTask):
         platform_base,
         platform_analysis,
         res,
-        crs,
+        aoi_crs,
         mosaic_type,
         **kwargs,
     ):
@@ -149,10 +149,10 @@ class NDVIAnomaly(CubeQueryTask):
         query = {
             "y": lat_range,
             "x": lon_range,
-            "output_crs": projection,
+            "output_crs": output_projection,
             "resolution": resolution,
             "dask_chunks": dask_chunks,
-            "crs": crs,
+            "crs": aoi_crs,
         }
 
         ## Create dask graph
@@ -261,7 +261,7 @@ class NDVIAnomaly(CubeQueryTask):
             ndvi_anomaly_export,
             file_name,
             bands=["ndvi_anomaly"],
-            crs=projection,
+            crs=output_projection,
             x_coord="x",
             y_coord="y",
         )
