@@ -1,7 +1,7 @@
 import numpy as np
 import xarray as xr
-import re
 import dask
+import utils
 from os import path
 from pyproj import Proj, transform
 
@@ -134,10 +134,10 @@ class NDVIAnomaly(CubeQueryTask):
         resolution = (-res, res)
 
         all_measurements = ["green", "red", "blue", "nir", "swir1", "swir2"]
-        baseline_product, baseline_measurement, baseline_water_product = create_product_measurement(
+        baseline_product, baseline_measurement, baseline_water_product = utils.create_product_measurement(
             platform_base, all_measurements
         )
-        analysis_product, analysis_measurement, analysis_water_product = create_product_measurement(
+        analysis_product, analysis_measurement, analysis_water_product = utils.create_product_measurement(
             platform_analysis, all_measurements
         )
 
@@ -173,13 +173,13 @@ class NDVIAnomaly(CubeQueryTask):
             **query,
         )
 
-        if is_dataset_empty(baseline_ds):
+        if utils.is_dataset_empty(baseline_ds):
             raise Exception(
                 "DataCube Load returned an empty Dataset."
                 + "Please check load parameters for Baseline Dataset!"
             )
 
-        if is_dataset_empty(analysis_ds):
+        if utils.is_dataset_empty(analysis_ds):
             raise Exception(
                 "DataCube Load returned an empty Dataset."
                 + "Please check load parameters for Analysis Dataset!"
@@ -269,33 +269,3 @@ class NDVIAnomaly(CubeQueryTask):
         )
 
         return [file_name]
-
-
-def create_product_measurement(platform, all_measurements):
-
-    if platform in ["SENTINEL_2"]:
-        product = "s2_esa_sr_granule"
-        measurements = all_measurements + ["coastal_aerosol", "scene_classification"]
-        # Change with S2 WOFS ready
-        water_product = "SENTINEL_2_PRODUCT DEFS"
-    else:
-        product_match = re.search("LANDSAT_(\d)", platform)
-        if product_match:
-            product = f"ls{product_match.group(1)}_usgs_sr_scene"
-            measurements = all_measurements + ["pixel_qa"]
-            water_product = f"ls{product_match.group(1)}_water_classification"
-        else:
-            raise Exception(f"invalid platform_name {platform}")
-
-    return product, measurements, water_product
-
-
-def is_dataset_empty(ds: xr.Dataset) -> bool:
-    checks_for_empty = [
-        lambda x: len(x.dims) == 0,  # Dataset has no dimensions
-        lambda x: len(x.data_vars) == 0,  # Dataset no variables
-    ]
-    for f in checks_for_empty:
-        if f(ds):
-            return True
-    return False
