@@ -3,12 +3,10 @@ import xarray as xr
 import dask
 import utils
 from os import path
-from pyproj import Proj, transform
 
 from cubequery.tasks import CubeQueryTask, Parameter, DType
 from datacube_utilities import import_export
 from datacube_utilities.createindices import NDVI
-from datacube_utilities.createAOI import create_lat_lon
 from datacube_utilities.masking import mask_good_quality
 from datacube_utilities.dc_mosaic import (
     create_median_mosaic,
@@ -118,20 +116,11 @@ class NDVIAnomaly(CubeQueryTask):
 
         ## Create datacube query
 
-        lat_extents, lon_extents = create_lat_lon(aoi)
-        inProj = Proj("+init=EPSG:4326")
-        outProj = Proj("+init=EPSG:3460")
+        dask_chunks = dict(time=40, x=2000, y=2000)
 
-        min_lat, max_lat = lat_extents
-        min_lon, max_lon = lon_extents
-
-        x_A, y_A = transform(inProj, outProj, min_lon, min_lat)
-        x_B, y_B = transform(inProj, outProj, max_lon, max_lat)
-
-        lat_range = (y_A, y_B)
-        lon_range = (x_A, x_B)
-
-        resolution = (-res, res)
+        query = utils.create_base_query(
+            aoi, res, output_projection, aoi_crs, dask_chunks
+        )
 
         all_measurements = ["green", "red", "blue", "nir", "swir1", "swir2"]
         baseline_product, baseline_measurement, baseline_water_product = utils.create_product_measurement(
@@ -143,17 +132,6 @@ class NDVIAnomaly(CubeQueryTask):
 
         baseline_time_period = (baseline_start_date, baseline_end_date)
         analysis_time_period = (analysis_start_date, analysis_end_date)
-
-        dask_chunks = dict(time=40, x=2000, y=2000)
-
-        query = {
-            "y": lat_range,
-            "x": lon_range,
-            "output_crs": output_projection,
-            "resolution": resolution,
-            "dask_chunks": dask_chunks,
-            "crs": aoi_crs,
-        }
 
         ## Create dask graph
 
