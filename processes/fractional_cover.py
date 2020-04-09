@@ -5,11 +5,7 @@ from os import path
 
 from cubequery.tasks import CubeQueryTask, Parameter, DType
 from datacube_utilities import import_export
-from datacube_utilities.masking import mask_good_quality
 from datacube_utilities.dc_fractional_coverage_classifier import frac_coverage_classify
-
-import odc.algo
-from odc.algo import to_f32, from_float, xr_geomedian
 
 
 class FractionalCover(CubeQueryTask):
@@ -145,32 +141,12 @@ class FractionalCover(CubeQueryTask):
         else:
             raise Exception("S2 does not yet have daskable water classification")
 
-        good_quality = mask_good_quality(ds, product)
-
         water_composite_mean = water_scenes.water_classification.mean(dim="time")
         water_composite_mean = water_composite_mean.rename(
             {"x": "longitude", "y": "latitude"}
         )
 
-        xx_data = ds[all_measurements]
-        xx_clean = odc.algo.keep_good_only(xx_data, where=good_quality)
-
-        scale, offset = (
-            1 / 10_000,
-            0,
-        )  # differs per product, aim for 0-1 values in float32
-
-        xx_clean_32 = to_f32(xx_clean, scale=scale, offset=offset)
-        yy = xr_geomedian(
-            xx_clean_32,
-            num_threads=1,  # disable internal threading, dask will run several concurrently
-            eps=0.2 * scale,  # 1/5 pixel value resolution
-            nocheck=True,
-        )  # disable some checks inside geomedian library that use too much ram
-
-        land_composite = from_float(
-            yy, dtype="int16", nodata=-9999, scale=1 / scale, offset=-offset / scale
-        )
+        land_composite = utils.geomedian(ds, product, all_measurements)
         land_composite.rename({"x": "longitude", "y": "latitude"})
 
         # Fractional Cover Classification

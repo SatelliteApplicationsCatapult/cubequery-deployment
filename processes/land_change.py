@@ -5,11 +5,7 @@ from os import path
 
 from cubequery.tasks import CubeQueryTask, Parameter, DType
 from datacube_utilities import import_export
-from datacube_utilities.masking import mask_good_quality
 from datacube_utilities.dc_fractional_coverage_classifier import frac_coverage_classify
-
-import odc.algo
-from odc.algo import to_f32, from_float, xr_geomedian
 
 
 class LandChange(CubeQueryTask):
@@ -194,42 +190,11 @@ class LandChange(CubeQueryTask):
         else:
             raise Exception("S2 does not yet have daskable water classification")
 
-        baseline_clean_mask = mask_good_quality(baseline_ds, baseline_product)
-        analysis_clean_mask = mask_good_quality(analysis_ds, analysis_product)
-
-        xx_data_b = baseline_ds[all_measurements]
-        xx_data_a = analysis_ds[all_measurements]
-
-        xx_clean_b = odc.algo.keep_good_only(xx_data_b, where=baseline_clean_mask)
-        xx_clean_a = odc.algo.keep_good_only(xx_data_a, where=analysis_clean_mask)
-
-        scale, offset = (
-            1 / 10_000,
-            0,
-        )  # differs per product, aim for 0-1 values in float32
-
-        xx_clean_b_32 = to_f32(xx_clean_b, scale=scale, offset=offset)
-        yy_b = xr_geomedian(
-            xx_clean_b_32,
-            num_threads=1,  # disable internal threading, dask will run several concurrently
-            eps=0.2 * scale,  # 1/5 pixel value resolution
-            nocheck=True,
-        )  # disable some checks inside geomedian library that use too much ram
-
-        baseline_composite = from_float(
-            yy_b, dtype="int16", nodata=-9999, scale=1 / scale, offset=-offset / scale
+        baseline_composite = utils.geomedian(
+            baseline_ds, baseline_product, all_measurements
         )
-
-        xx_clean_a_32 = to_f32(xx_clean_a, scale=scale, offset=offset)
-        yy_a = xr_geomedian(
-            xx_clean_a_32,
-            num_threads=1,  # disable internal threading, dask will run several concurrently
-            eps=0.2 * scale,  # 1/5 pixel value resolution
-            nocheck=True,
-        )  # disable some checks inside geomedian library that use too much ram
-
-        analysis_composite = from_float(
-            yy_a, dtype="int16", nodata=-9999, scale=1 / scale, offset=-offset / scale
+        analysis_composite = utils.geomedian(
+            analysis_ds, analysis_product, all_measurements
         )
 
         water_classes_base = water_scenes_baseline.where(water_scenes_baseline >= 0)
