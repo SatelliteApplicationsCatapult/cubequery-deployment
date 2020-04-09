@@ -199,8 +199,8 @@ class NDVIAnomaly(CubeQueryTask):
         else:
             raise Exception("S2 does not yet have daskable water classification")
 
-        b_good_quality = mask_good_quality(platform_base, baseline_ds)
-        a_good_quality = mask_good_quality(platform_analysis, analysis_ds)
+        b_good_quality = mask_good_quality(baseline_ds, baseline_product)
+        a_good_quality = mask_good_quality(analysis_ds, analysis_product)
 
         baseline_ds = baseline_ds.where(b_good_quality)
         analysis_ds = analysis_ds.where(a_good_quality)
