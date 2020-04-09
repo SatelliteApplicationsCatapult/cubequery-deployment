@@ -189,11 +189,13 @@ class NDVIAnomaly(CubeQueryTask):
             water_scenes_baseline = dc.load(
                 product=baseline_water_product,
                 measurements=["water_classification"],
+                time=baseline_time_period,
                 **query,
             )
             water_scenes_analysis = dc.load(
                 product=analysis_water_product,
                 measurements=["water_classification"],
+                time=analysis_time_period,
                 **query,
             )
         else:
