@@ -132,7 +132,7 @@ class FractionalCover(CubeQueryTask):
 
         if platform in ["LANDSAT_8", "LANDSAT_7", "LANDSAT_5", "LANDSAT_4"]:
             water_scenes = dc.load(
-                product=product,
+                product=water_product,
                 measurements=["water_classification"],
                 time=time,
                 **query,
