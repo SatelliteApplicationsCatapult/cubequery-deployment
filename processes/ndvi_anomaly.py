@@ -1,14 +1,12 @@
 import numpy as np
 import xarray as xr
-import re
 import dask
+import utils
 from os import path
-from pyproj import Proj, transform
 
 from cubequery.tasks import CubeQueryTask, Parameter, DType
 from datacube_utilities import import_export
 from datacube_utilities.createindices import NDVI
-from datacube_utilities.createAOI import create_lat_lon
 from datacube_utilities.masking import mask_good_quality
 from datacube_utilities.dc_mosaic import (
     create_median_mosaic,
@@ -118,42 +116,22 @@ class NDVIAnomaly(CubeQueryTask):
 
         ## Create datacube query
 
-        lat_extents, lon_extents = create_lat_lon(aoi)
-        inProj = Proj("+init=EPSG:4326")
-        outProj = Proj("+init=EPSG:3460")
+        dask_chunks = dict(time=40, x=2000, y=2000)
 
-        min_lat, max_lat = lat_extents
-        min_lon, max_lon = lon_extents
-
-        x_A, y_A = transform(inProj, outProj, min_lon, min_lat)
-        x_B, y_B = transform(inProj, outProj, max_lon, max_lat)
-
-        lat_range = (y_A, y_B)
-        lon_range = (x_A, x_B)
-
-        resolution = (-res, res)
+        query = utils.create_base_query(
+            aoi, res, output_projection, aoi_crs, dask_chunks
+        )
 
         all_measurements = ["green", "red", "blue", "nir", "swir1", "swir2"]
-        baseline_product, baseline_measurement, baseline_water_product = create_product_measurement(
+        baseline_product, baseline_measurement, baseline_water_product = utils.create_product_measurement(
             platform_base, all_measurements
         )
-        analysis_product, analysis_measurement, analysis_water_product = create_product_measurement(
+        analysis_product, analysis_measurement, analysis_water_product = utils.create_product_measurement(
             platform_analysis, all_measurements
         )
 
         baseline_time_period = (baseline_start_date, baseline_end_date)
         analysis_time_period = (analysis_start_date, analysis_end_date)
-
-        dask_chunks = dict(time=40, x=2000, y=2000)
-
-        query = {
-            "y": lat_range,
-            "x": lon_range,
-            "output_crs": output_projection,
-            "resolution": resolution,
-            "dask_chunks": dask_chunks,
-            "crs": aoi_crs,
-        }
 
         ## Create dask graph
 
@@ -173,13 +151,13 @@ class NDVIAnomaly(CubeQueryTask):
             **query,
         )
 
-        if is_dataset_empty(baseline_ds):
+        if utils.is_dataset_empty(baseline_ds):
             raise Exception(
                 "DataCube Load returned an empty Dataset."
                 + "Please check load parameters for Baseline Dataset!"
             )
 
-        if is_dataset_empty(analysis_ds):
+        if utils.is_dataset_empty(analysis_ds):
             raise Exception(
                 "DataCube Load returned an empty Dataset."
                 + "Please check load parameters for Analysis Dataset!"
@@ -269,33 +247,3 @@ class NDVIAnomaly(CubeQueryTask):
         )
 
         return [file_name]
-
-
-def create_product_measurement(platform, all_measurements):
-
-    if platform in ["SENTINEL_2"]:
-        product = "s2_esa_sr_granule"
-        measurements = all_measurements + ["coastal_aerosol", "scene_classification"]
-        # Change with S2 WOFS ready
-        water_product = "SENTINEL_2_PRODUCT DEFS"
-    else:
-        product_match = re.search("LANDSAT_(\d)", platform)
-        if product_match:
-            product = f"ls{product_match.group(1)}_usgs_sr_scene"
-            measurements = all_measurements + ["pixel_qa"]
-            water_product = f"ls{product_match.group(1)}_water_classification"
-        else:
-            raise Exception(f"invalid platform_name {platform}")
-
-    return product, measurements, water_product
-
-
-def is_dataset_empty(ds: xr.Dataset) -> bool:
-    checks_for_empty = [
-        lambda x: len(x.dims) == 0,  # Dataset has no dimensions
-        lambda x: len(x.data_vars) == 0,  # Dataset no variables
-    ]
-    for f in checks_for_empty:
-        if f(ds):
-            return True
-    return False
