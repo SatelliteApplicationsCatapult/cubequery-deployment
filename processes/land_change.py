@@ -45,7 +45,7 @@ class LandChange(CubeQueryTask):
     )
 
     parameters = [
-        Parameter("aoi", "AOI", DType.WKT, "Area of interest"),
+        Parameter("aoi", "AOI", DType.WKT, "Area of interest."),
         Parameter(
             "output_projection",
             "Output Projection",
@@ -56,48 +56,48 @@ class LandChange(CubeQueryTask):
             "baseline_start_date",
             "Baseline Start Date",
             DType.DATE,
-            "Start date of the period to use for the baseline",
+            "Start date of the period to use for the baseline.",
         ),
         Parameter(
             "baseline_end_date",
             "Baseline End Date",
             DType.DATE,
-            "End date of the period to use for the baseline",
+            "End date of the period to use for the baseline.",
         ),
         Parameter(
             "analysis_start_date",
             "Analysis Start Date",
             DType.DATE,
-            "Start date of the period to use for the analysis",
+            "Start date of the period to use for the analysis.",
         ),
         Parameter(
             "analysis_end_date",
             "Analysis End Date",
             DType.DATE,
-            "End date of the period to use for the analysis",
+            "End date of the period to use for the analysis.",
         ),
         Parameter(
             "platform_base",
             "Baseline Satellite",
             DType.STRING,
-            "Satellite to use for the baseline",
+            "Satellite to use for the baseline.",
             ["SENTINEL_2", "LANDSAT_4", "LANDSAT_5", "LANDSAT_7", "LANDSAT_8"],
         ),
         Parameter(
             "platform_analysis",
             "Analysis Satellite",
             DType.STRING,
-            "Satellite to use for the analysis",
+            "Satellite to use for the analysis.",
             ["SENTINEL_2", "LANDSAT_4", "LANDSAT_5", "LANDSAT_7", "LANDSAT_8"],
         ),
         Parameter(
             "res",
-            "resolution in meters",
+            "Resolution in meters",
             DType.INT,
-            "Pixel resution in meters",
+            "Pixel resution in meters.",
             [0, 500],
         ),
-        Parameter("aoi_crs", "AIO CRS", DType.STRING, "CRS of the Area of Interest"),
+        Parameter("aoi_crs", "AIO CRS", DType.STRING, "CRS of the Area of Interest."),
     ]
 
     CubeQueryTask.cal_significant_kwargs(parameters)

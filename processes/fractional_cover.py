@@ -57,7 +57,7 @@ class FractionalCover(CubeQueryTask):
     """
 
     parameters = [
-        Parameter("aoi", "AOI", DType.WKT, "Area of interest"),
+        Parameter("aoi", "AOI", DType.WKT, "Area of interest."),
         Parameter(
             "output_projection",
             "Output Projection",
@@ -75,12 +75,12 @@ class FractionalCover(CubeQueryTask):
         ),
         Parameter(
             "res",
-            "resolution in meters",
+            "Resolution in meters",
             DType.INT,
-            "Pixel resution in meters",
+            "Pixel resution in meters.",
             [0, 500],
         ),
-        Parameter("aoi_crs", "AIO CRS", DType.STRING, "CRS of the Area of Interest"),
+        Parameter("aoi_crs", "AIO CRS", DType.STRING, "CRS of the Area of Interest."),
     ]
 
     CubeQueryTask.cal_significant_kwargs(parameters)
