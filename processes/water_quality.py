@@ -32,7 +32,7 @@ class WaterQuality(CubeQueryTask):
     """
 
     display_name = "Water Quality"
-    description = "Water Quality, showing the Total Suspeded Matter in water bodies."
+    description = "Water Quality, showing the Total Suspended Matter in water bodies."
 
     parameters = [
         Parameter("aoi", "AOI", DType.WKT, "Area of interest."),
