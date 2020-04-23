@@ -1,7 +1,6 @@
 import numpy as np
 import xarray as xr
 import dask
-import utils
 from os import path
 
 from cubequery.tasks import CubeQueryTask, Parameter, DType
@@ -12,6 +11,11 @@ from datacube_utilities.dc_mosaic import (
     create_median_mosaic,
     create_mean_mosaic,
     create_max_ndvi_mosaic,
+)
+from datacube_utilities.query import (
+    create_base_query,
+    create_product_measurement,
+    is_dataset_empty,
 )
 
 
@@ -118,15 +122,13 @@ class NDVIAnomaly(CubeQueryTask):
 
         dask_chunks = dict(time=40, x=2000, y=2000)
 
-        query = utils.create_base_query(
-            aoi, res, output_projection, aoi_crs, dask_chunks
-        )
+        query = create_base_query(aoi, res, output_projection, aoi_crs, dask_chunks)
 
         all_measurements = ["green", "red", "blue", "nir", "swir1", "swir2"]
-        baseline_product, baseline_measurement, baseline_water_product = utils.create_product_measurement(
+        baseline_product, baseline_measurement, baseline_water_product = create_product_measurement(
             platform_base, all_measurements
         )
-        analysis_product, analysis_measurement, analysis_water_product = utils.create_product_measurement(
+        analysis_product, analysis_measurement, analysis_water_product = create_product_measurement(
             platform_analysis, all_measurements
         )
 
@@ -151,13 +153,13 @@ class NDVIAnomaly(CubeQueryTask):
             **query,
         )
 
-        if utils.is_dataset_empty(baseline_ds):
+        if is_dataset_empty(baseline_ds):
             raise Exception(
                 "DataCube Load returned an empty Dataset."
                 + "Please check load parameters for Baseline Dataset!"
             )
 
-        if utils.is_dataset_empty(analysis_ds):
+        if is_dataset_empty(analysis_ds):
             raise Exception(
                 "DataCube Load returned an empty Dataset."
                 + "Please check load parameters for Analysis Dataset!"

@@ -1,11 +1,16 @@
 import numpy as np
 import xarray as xr
-import utils
 from os import path
 
 from cubequery.tasks import CubeQueryTask, Parameter, DType
 from datacube_utilities import import_export
 from datacube_utilities.dc_fractional_coverage_classifier import frac_coverage_classify
+from datacube_utilities.geomedian import geomedian
+from datacube_utilities.query import (
+    create_base_query,
+    create_product_measurement,
+    is_dataset_empty,
+)
 
 
 class FractionalCover(CubeQueryTask):
@@ -103,12 +108,10 @@ class FractionalCover(CubeQueryTask):
 
         dask_chunks = dict(time=10, x=600, y=600)
 
-        query = utils.create_base_query(
-            aoi, res, output_projection, aoi_crs, dask_chunks
-        )
+        query = create_base_query(aoi, res, output_projection, aoi_crs, dask_chunks)
 
         all_measurements = ["green", "red", "blue", "nir", "swir1", "swir2"]
-        product, measurement, water_product = utils.create_product_measurement(
+        product, measurement, water_product = create_product_measurement(
             platform, all_measurements
         )
 
@@ -124,7 +127,7 @@ class FractionalCover(CubeQueryTask):
             **query,
         )
 
-        if utils.is_dataset_empty(ds):
+        if is_dataset_empty(ds):
             raise Exception(
                 "DataCube Load returned an empty Dataset."
                 + "Please check load parameters for Baseline Dataset!"
@@ -146,7 +149,7 @@ class FractionalCover(CubeQueryTask):
             {"x": "longitude", "y": "latitude"}
         )
 
-        land_composite = utils.geomedian(ds, product, all_measurements)
+        land_composite = geomedian(ds, product, all_measurements)
         land_composite.rename({"x": "longitude", "y": "latitude"})
 
         # Fractional Cover Classification
