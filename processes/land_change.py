@@ -1,11 +1,16 @@
 import numpy as np
 import xarray as xr
-import utils
 from os import path
 
 from cubequery.tasks import CubeQueryTask, Parameter, DType
 from datacube_utilities import import_export
 from datacube_utilities.dc_fractional_coverage_classifier import frac_coverage_classify
+from datacube_utilities.geomedian import geomedian
+from datacube_utilities.query import (
+    create_base_query,
+    create_product_measurement,
+    is_dataset_empty,
+)
 
 
 class LandChange(CubeQueryTask):
@@ -123,15 +128,13 @@ class LandChange(CubeQueryTask):
 
         dask_chunks = dict(time=10, x=500, y=500)
 
-        query = utils.create_base_query(
-            aoi, res, output_projection, aoi_crs, dask_chunks
-        )
+        query = create_base_query(aoi, res, output_projection, aoi_crs, dask_chunks)
 
         all_measurements = ["green", "red", "blue", "nir", "swir1", "swir2"]
-        baseline_product, baseline_measurement, baseline_water_product = utils.create_product_measurement(
+        baseline_product, baseline_measurement, baseline_water_product = create_product_measurement(
             platform_base, all_measurements
         )
-        analysis_product, analysis_measurement, analysis_water_product = utils.create_product_measurement(
+        analysis_product, analysis_measurement, analysis_water_product = create_product_measurement(
             platform_analysis, all_measurements
         )
 
@@ -156,13 +159,13 @@ class LandChange(CubeQueryTask):
             **query,
         )
 
-        if utils.is_dataset_empty(baseline_ds):
+        if is_dataset_empty(baseline_ds):
             raise Exception(
                 "DataCube Load returned an empty Dataset."
                 + "Please check load parameters for Baseline Dataset!"
             )
 
-        if utils.is_dataset_empty(analysis_ds):
+        if is_dataset_empty(analysis_ds):
             raise Exception(
                 "DataCube Load returned an empty Dataset."
                 + "Please check load parameters for Analysis Dataset!"
@@ -190,12 +193,8 @@ class LandChange(CubeQueryTask):
         else:
             raise Exception("S2 does not yet have daskable water classification")
 
-        baseline_composite = utils.geomedian(
-            baseline_ds, baseline_product, all_measurements
-        )
-        analysis_composite = utils.geomedian(
-            analysis_ds, analysis_product, all_measurements
-        )
+        baseline_composite = geomedian(baseline_ds, baseline_product, all_measurements)
+        analysis_composite = geomedian(analysis_ds, analysis_product, all_measurements)
 
         water_classes_base = water_scenes_baseline.where(water_scenes_baseline >= 0)
         water_classes_analysis = water_scenes_analysis.where(water_scenes_analysis >= 0)

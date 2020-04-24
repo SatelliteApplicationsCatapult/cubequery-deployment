@@ -1,9 +1,13 @@
 import xarray as xr
-import utils
 from os import path
 
 from cubequery.tasks import CubeQueryTask, Parameter, DType
 from datacube_utilities import import_export
+from datacube_utilities.query import (
+    create_base_query,
+    create_product_measurement,
+    is_dataset_empty,
+)
 
 
 class WaterPermanency(CubeQueryTask):
@@ -62,12 +66,10 @@ class WaterPermanency(CubeQueryTask):
 
         dask_chunks = dict(time=1, x=2000, y=2000)
 
-        query = utils.create_base_query(
-            aoi, res, output_projection, aoi_crs, dask_chunks
-        )
+        query = create_base_query(aoi, res, output_projection, aoi_crs, dask_chunks)
 
         all_measurements = ["green", "red", "blue", "nir", "swir1", "swir2"]
-        _product, _measurement, water_product = utils.create_product_measurement(
+        _product, _measurement, water_product = create_product_measurement(
             platform, all_measurements
         )
 
@@ -84,7 +86,7 @@ class WaterPermanency(CubeQueryTask):
             **query,
         )
 
-        if utils.is_dataset_empty(ds):
+        if is_dataset_empty(ds):
             raise Exception(
                 "DataCube Load returned an empty Dataset."
                 + "Please check load parameters for Baseline Dataset!"

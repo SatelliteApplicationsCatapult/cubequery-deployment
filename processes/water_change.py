@@ -1,11 +1,15 @@
 import numpy as np
 import xarray as xr
 import dask
-import utils
 from os import path
 
 from cubequery.tasks import CubeQueryTask, Parameter, DType
 from datacube_utilities import import_export
+from datacube_utilities.query import (
+    create_base_query,
+    create_product_measurement,
+    is_dataset_empty,
+)
 
 
 class WaterChange(CubeQueryTask):
@@ -97,15 +101,13 @@ class WaterChange(CubeQueryTask):
 
         dask_chunks = dict(time=1, x=2000, y=2000)
 
-        query = utils.create_base_query(
-            aoi, res, output_projection, aoi_crs, dask_chunks
-        )
+        query = create_base_query(aoi, res, output_projection, aoi_crs, dask_chunks)
 
         all_measurements = ["green", "red", "blue", "nir", "swir1", "swir2"]
-        _baseline_product, _baseline_measurement, baseline_water_product = utils.create_product_measurement(
+        _baseline_product, _baseline_measurement, baseline_water_product = create_product_measurement(
             platform_base, all_measurements
         )
-        _analysis_product, _analysis_measurement, analysis_water_product = utils.create_product_measurement(
+        _analysis_product, _analysis_measurement, analysis_water_product = create_product_measurement(
             platform_analysis, all_measurements
         )
 
@@ -130,13 +132,13 @@ class WaterChange(CubeQueryTask):
             **query,
         )
 
-        if utils.is_dataset_empty(baseline_ds):
+        if is_dataset_empty(baseline_ds):
             raise Exception(
                 "DataCube Load returned an empty Dataset."
                 + "Please check load parameters for Baseline Dataset!"
             )
 
-        if utils.is_dataset_empty(analysis_ds):
+        if is_dataset_empty(analysis_ds):
             raise Exception(
                 "DataCube Load returned an empty Dataset."
                 + "Please check load parameters for Analysis Dataset!"

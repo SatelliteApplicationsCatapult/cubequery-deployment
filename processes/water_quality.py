@@ -1,12 +1,16 @@
 import xarray as xr
 import dask
-import utils
 from os import path
 
 from cubequery.tasks import CubeQueryTask, Parameter, DType
 from datacube_utilities import import_export
 from datacube_utilities.masking import mask_good_quality
 from datacube_utilities.dc_water_quality import tsm
+from datacube_utilities.query import (
+    create_base_query,
+    create_product_measurement,
+    is_dataset_empty,
+)
 
 
 class WaterQuality(CubeQueryTask):
@@ -82,12 +86,10 @@ class WaterQuality(CubeQueryTask):
 
         dask_chunks = dict(time=10, x=1000, y=1000)
 
-        query = utils.create_base_query(
-            aoi, res, output_projection, aoi_crs, dask_chunks
-        )
+        query = create_base_query(aoi, res, output_projection, aoi_crs, dask_chunks)
 
         all_measurements = ["green", "red", "blue", "nir", "swir1", "swir2"]
-        product, measurement, water_product = utils.create_product_measurement(
+        product, measurement, water_product = create_product_measurement(
             platform, all_measurements
         )
 
@@ -103,7 +105,7 @@ class WaterQuality(CubeQueryTask):
             **query,
         )
 
-        if utils.is_dataset_empty(ds):
+        if is_dataset_empty(ds):
             raise Exception(
                 "DataCube Load returned an empty Dataset."
                 + "Please check load parameters for Baseline Dataset!"
