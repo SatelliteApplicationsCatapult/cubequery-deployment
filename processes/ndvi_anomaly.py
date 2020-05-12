@@ -72,14 +72,14 @@ class NDVIAnomaly(CubeQueryTask):
             "Baseline Satellite",
             DType.STRING,
             "Satellite to use for the baseline",
-            ["SENTINEL_2", "LANDSAT_4", "LANDSAT_5", "LANDSAT_7", "LANDSAT_8"],
+            ["LANDSAT_4", "LANDSAT_5", "LANDSAT_7", "LANDSAT_8"],
         ),
         Parameter(
             "platform_analysis",
             "Analysis Satellite",
             DType.STRING,
             "Satellite to use for the analysis",
-            ["SENTINEL_2", "LANDSAT_4", "LANDSAT_5", "LANDSAT_7", "LANDSAT_8"],
+            ["LANDSAT_4", "LANDSAT_5", "LANDSAT_7", "LANDSAT_8"],
         ),
         Parameter(
             "res",
@@ -125,12 +125,16 @@ class NDVIAnomaly(CubeQueryTask):
         query = create_base_query(aoi, res, output_projection, aoi_crs, dask_chunks)
 
         all_measurements = ["green", "red", "blue", "nir", "swir1", "swir2"]
-        baseline_product, baseline_measurement, baseline_water_product = create_product_measurement(
-            platform_base, all_measurements
-        )
-        analysis_product, analysis_measurement, analysis_water_product = create_product_measurement(
-            platform_analysis, all_measurements
-        )
+        (
+            baseline_product,
+            baseline_measurement,
+            baseline_water_product,
+        ) = create_product_measurement(platform_base, all_measurements)
+        (
+            analysis_product,
+            analysis_measurement,
+            analysis_water_product,
+        ) = create_product_measurement(platform_analysis, all_measurements)
 
         baseline_time_period = (baseline_start_date, baseline_end_date)
         analysis_time_period = (analysis_start_date, analysis_end_date)
@@ -165,21 +169,18 @@ class NDVIAnomaly(CubeQueryTask):
                 + "Please check load parameters for Analysis Dataset!"
             )
 
-        if platform_base in ["LANDSAT_8", "LANDSAT_7", "LANDSAT_5", "LANDSAT_4"]:
-            water_scenes_baseline = dc.load(
-                product=baseline_water_product,
-                measurements=["water_classification"],
-                time=baseline_time_period,
-                **query,
-            )
-            water_scenes_analysis = dc.load(
-                product=analysis_water_product,
-                measurements=["water_classification"],
-                time=analysis_time_period,
-                **query,
-            )
-        else:
-            raise Exception("S2 does not yet have daskable water classification")
+        water_scenes_baseline = dc.load(
+            product=baseline_water_product,
+            measurements=["water_classification"],
+            time=baseline_time_period,
+            **query,
+        )
+        water_scenes_analysis = dc.load(
+            product=analysis_water_product,
+            measurements=["water_classification"],
+            time=analysis_time_period,
+            **query,
+        )
 
         b_good_quality = mask_good_quality(baseline_ds, baseline_product)
         a_good_quality = mask_good_quality(analysis_ds, analysis_product)

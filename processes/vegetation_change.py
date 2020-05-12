@@ -91,14 +91,14 @@ class VegetationChange(CubeQueryTask):
             "Baseline Satellite",
             DType.STRING,
             "Satellite to use for the baseline.",
-            ["SENTINEL_2", "LANDSAT_4", "LANDSAT_5", "LANDSAT_7", "LANDSAT_8"],
+            ["LANDSAT_4", "LANDSAT_5", "LANDSAT_7", "LANDSAT_8"],
         ),
         Parameter(
             "platform_analysis",
             "Analysis Satellite",
             DType.STRING,
             "Satellite to use for the analysis.",
-            ["SENTINEL_2", "LANDSAT_4", "LANDSAT_5", "LANDSAT_7", "LANDSAT_8"],
+            ["LANDSAT_4", "LANDSAT_5", "LANDSAT_7", "LANDSAT_8"],
         ),
         Parameter(
             "res",
@@ -246,27 +246,20 @@ class VegetationChange(CubeQueryTask):
                 analysis_ds_masked, clean_mask=analysis_clean_mask, no_data=np.nan
             )
 
-        if platform_base in ["LANDSAT_8", "LANDSAT_7", "LANDSAT_5", "LANDSAT_4"]:
-            water_scenes_baseline = dc.load(
-                product=baseline_water_product,
-                measurements=["water_classification"],
-                time=baseline_time_period,
-                **query,
-            )
-            water_scenes_baseline = water_scenes_baseline.where(
-                water_scenes_baseline >= 0
-            )
-            water_scenes_analysis = dc.load(
-                product=analysis_water_product,
-                measurements=["water_classification"],
-                time=analysis_time_period,
-                **query,
-            )
-            water_scenes_analysis = water_scenes_analysis.where(
-                water_scenes_analysis >= 0
-            )
-        else:
-            raise Exception("S2 does not yet have daskable water classification")
+        water_scenes_baseline = dc.load(
+            product=baseline_water_product,
+            measurements=["water_classification"],
+            time=baseline_time_period,
+            **query,
+        )
+        water_scenes_baseline = water_scenes_baseline.where(water_scenes_baseline >= 0)
+        water_scenes_analysis = dc.load(
+            product=analysis_water_product,
+            measurements=["water_classification"],
+            time=analysis_time_period,
+            **query,
+        )
+        water_scenes_analysis = water_scenes_analysis.where(water_scenes_analysis >= 0)
 
         baseline_composite = baseline_composite.rename(
             {"y": "latitude", "x": "longitude"}

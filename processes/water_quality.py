@@ -53,7 +53,7 @@ class WaterQuality(CubeQueryTask):
             "Satellite",
             DType.STRING,
             "Satellite to use.",
-            ["SENTINEL_2", "LANDSAT_4", "LANDSAT_5", "LANDSAT_7", "LANDSAT_8"],
+            ["LANDSAT_4", "LANDSAT_5", "LANDSAT_7", "LANDSAT_8"],
         ),
         Parameter(
             "res",
@@ -111,15 +111,12 @@ class WaterQuality(CubeQueryTask):
                 + "Please check load parameters for Baseline Dataset!"
             )
 
-        if platform in ["LANDSAT_8", "LANDSAT_7", "LANDSAT_5", "LANDSAT_4"]:
-            water_scenes = dc.load(
-                product=water_product,
-                measurements=["water_classification"],
-                time=time,
-                **query,
-            )
-        else:
-            raise Exception("S2 does not yet have daskable water classification")
+        water_scenes = dc.load(
+            product=water_product,
+            measurements=["water_classification"],
+            time=time,
+            **query,
+        )
 
         # Set land to no_data
         water_dataset = water_scenes.where(water_scenes > 0)
