@@ -1,11 +1,20 @@
+import dask
 import numpy as np
 import xarray as xr
 from os import path
+import odc.algo
 
 from cubequery.tasks import CubeQueryTask, Parameter, DType
 from datacube_utilities import import_export
+from datacube_utilities.createindices import NDVI, EVI
+from datacube_utilities.masking import mask_good_quality
 from datacube_utilities.dc_fractional_coverage_classifier import frac_coverage_classify
 from datacube_utilities.geomedian import geomedian
+from datacube_utilities.dc_mosaic import (
+    create_median_mosaic,
+    create_mean_mosaic,
+    create_max_ndvi_mosaic,
+)
 from datacube_utilities.query import (
     create_base_query,
     create_product_measurement,
@@ -13,41 +22,37 @@ from datacube_utilities.query import (
 )
 
 
-class LandChange(CubeQueryTask):
+def createparametercomposite(indices, ds):
+    """Calculate the chosen indicies.
     """
-    This task uses changes in Fractional Cover to identify land change. The algorithm identifies
-    a "baseline" and "analysis" time period and then compares the spectral parameters in each of
-    those time periods.
+    if indices == "NDVI":
+        parameter_composite = NDVI(ds)
+    elif indices == "EVI":
+        parameter_composite = EVI(ds)
+    elif indices == "FC":
+        parameter_composite_all = frac_coverage_classify(ds, no_data=np.nan)
+        parameter_composite = parameter_composite_all.pv.where(
+            np.logical_not(np.isnan(ds.red.values))
+        )
+    return parameter_composite
 
-    Fractional Cover represents the proportion of the land surface which is bare (BS), covered by
-    photosynthetic vegetation (PV), or non-photosynthetic vegetation(NPV).
 
-    The Fractional Cover product was generated using the spectral unmixing algorithm developed by
-    the Joint Remote Sensing Research Program (JRSRP) which used the spectral signature for each
-    pixel to break it up into three fractions, based on field work that determined the spectral
-    characteristics of these fractions. The fractions were retrieved by inverting multiple linear
-    regression estimates and using synthetic endmembers in a constrained non-negative least squares
-    unmixing model.
+class VegetationChange(CubeQueryTask):
+    """
+    This task uses changes in NDVI, EVI or Fractional Cover to identify vegetation change.
 
-    The green (PV) fraction includes leaves and grass, the non-photosynthetic fraction (NPV)
-    includes branches, dry grass and dead leaf litter, and the bare soil (BS) fraction includes bare
-    soil or rock.
+    The algorithm identifies a "baseline" and "analysis" time period and then compares the spectral
+    parameters in each of those time periods. Significant reductions in vegetation are coincident
+    with land change. In some cases these changes could be deforestation.
 
-    Changes in each fraction are conincident with land change.
-
-    In some cases these changes could be deforestation. Users of this algorithm should not accept
-    the accuracy of the results but should conduct ground validation testing to assess accuracy. In
-    most cases, these algorithms can be used to identify clusters of pixels that have experienced
-    change and allow targeted investigation of those areas by local or regional governments.
-
-    This output of this task is a raster product for each of the fractional cover bands - where
-    positive changes represents gain in that band, and negative change represents loss.
+    Users of this algorithm should not accept the accuracy of the results but should conduct ground
+    validation testing to assess accuracy. In most cases, these algorithms can be used to identify
+    clusters of pixels that have experienced change and allow targeted investigation of those areas
+    by local or regional governments.
     """
 
-    display_name = "Land Change"
-    description = (
-        "Land Change, showing changes in fractional cover between two time periods."
-    )
+    display_name = "Vegetation Change"
+    description = "Vegetation Change derived from changes in NDVI, EVI, or Fractional Cover cover between two time periods."
 
     parameters = [
         Parameter("aoi", "AOI", DType.WKT, "Area of interest."),
@@ -103,6 +108,34 @@ class LandChange(CubeQueryTask):
             [0, 500],
         ),
         Parameter("aoi_crs", "AIO CRS", DType.STRING, "CRS of the Area of Interest."),
+        Parameter(
+            "mosaic_type",
+            "Mosaic Type",
+            DType.STRING,
+            "Mosaic type to use for the analysis.",
+            ["max", "median", "mean", "geomedian"],
+        ),
+        Parameter(
+            "indices",
+            "Indices",
+            DType.STRING,
+            "Indices to use for the analysis.",
+            ["EVI", "NDVI", "FC"],
+        ),
+        Parameter(
+            "minC",
+            "Indices Minimum Threshold",
+            DType.INT,
+            "Typical Values: NDVI=-0.7, EVI=-1.75, FC=-70",
+            [-100, 100],
+        ),
+        Parameter(
+            "maxC",
+            "Indices Maximum Threshold",
+            DType.INT,
+            "Typical Values: NDVI=-0.2, EVI=-0.5, FC=-20",
+            [-100, 100],
+        ),
     ]
 
     CubeQueryTask.cal_significant_kwargs(parameters)
@@ -121,12 +154,16 @@ class LandChange(CubeQueryTask):
         platform_analysis,
         res,
         aoi_crs,
+        mosaic_type,
+        indices,
+        minC,
+        maxC,
         **kwargs,
     ):
 
         ## Create datacube query
 
-        dask_chunks = dict(time=10, x=500, y=500)
+        dask_chunks = dict(time=1, x=1000, y=1000)
 
         query = create_base_query(aoi, res, output_projection, aoi_crs, dask_chunks)
 
@@ -175,6 +212,40 @@ class LandChange(CubeQueryTask):
                 + "Please check load parameters for Analysis Dataset!"
             )
 
+        baseline_clean_mask = mask_good_quality(baseline_ds, baseline_product)
+        analysis_clean_mask = mask_good_quality(analysis_ds, analysis_product)
+
+        xx_data_b = baseline_ds[all_measurements]
+        xx_data_a = analysis_ds[all_measurements]
+
+        baseline_ds_masked = odc.algo.keep_good_only(
+            xx_data_b, where=baseline_clean_mask
+        )
+        analysis_ds_masked = odc.algo.keep_good_only(
+            xx_data_a, where=analysis_clean_mask
+        )
+
+        if mosaic_type == "geomedian":
+            baseline_composite = geomedian(
+                baseline_ds_masked, baseline_product, all_measurements
+            )
+            analysis_composite = geomedian(
+                analysis_ds_masked, analysis_product, all_measurements
+            )
+        else:
+            mosaic_function = {
+                "median": create_median_mosaic,
+                "max": create_max_ndvi_mosaic,
+                "mean": create_mean_mosaic,
+            }
+            new_compositor = mosaic_function[mosaic_type]
+            baseline_composite = dask.delayed(new_compositor)(
+                baseline_ds_masked, clean_mask=baseline_clean_mask, no_data=np.nan
+            )
+            analysis_composite = dask.delayed(new_compositor)(
+                analysis_ds_masked, clean_mask=analysis_clean_mask, no_data=np.nan
+            )
+
         water_scenes_baseline = dc.load(
             product=baseline_water_product,
             measurements=["water_classification"],
@@ -190,106 +261,79 @@ class LandChange(CubeQueryTask):
         )
         water_scenes_analysis = water_scenes_analysis.where(water_scenes_analysis >= 0)
 
-        baseline_composite = geomedian(baseline_ds, baseline_product, all_measurements)
-        analysis_composite = geomedian(analysis_ds, analysis_product, all_measurements)
-
-        water_classes_base = water_scenes_baseline.where(water_scenes_baseline >= 0)
-        water_classes_analysis = water_scenes_analysis.where(water_scenes_analysis >= 0)
-
-        water_composite_base = water_classes_base.water_classification.mean(dim="time")
-        water_composite_analysis = water_classes_analysis.water_classification.mean(
-            dim="time"
-        )
-
         baseline_composite = baseline_composite.rename(
-            {"y": "latitude", "x": "longitude"}
-        )
-        water_composite_base = water_composite_base.rename(
             {"y": "latitude", "x": "longitude"}
         )
         analysis_composite = analysis_composite.rename(
             {"y": "latitude", "x": "longitude"}
         )
-        water_composite_analysis = water_composite_analysis.rename(
-            {"y": "latitude", "x": "longitude"}
+
+        # Spectral Parameter
+
+        parameter_baseline_composite = createparametercomposite(
+            indices, baseline_composite
+        )
+        parameter_analysis_composite = createparametercomposite(
+            indices, analysis_composite
         )
 
-        # Spectral Parameter Anomaly
+        # Generate water mask
 
-        parameter_baseline_composite = xr.map_blocks(
-            frac_coverage_classify, baseline_composite, kwargs={"no_data": np.nan}
+        water_composite_base = dask.delayed(
+            water_scenes_baseline.water_classification.mean(dim="time")
         )
-        parameter_analysis_composite = xr.map_blocks(
-            frac_coverage_classify, analysis_composite, kwargs={"no_data": np.nan}
-        )
-
-        frac_cov_baseline = parameter_baseline_composite.where(
-            (water_composite_base <= 0.4) & (parameter_baseline_composite != -9999)
+        water_composite_analysis = dask.delayed(
+            water_scenes_analysis.water_classification.mean(dim="time")
         )
 
-        frac_cov_analysis = parameter_analysis_composite.where(
-            (water_composite_analysis <= 0.4) & (parameter_analysis_composite != -9999)
-        )
-        parameter_anomaly = frac_cov_analysis - frac_cov_baseline
+        # Apply water mask
+
+        vegetation_baseline = parameter_baseline_composite.where(
+            water_composite_base.values <= 0.4
+        ).where(parameter_baseline_composite != -9999)
+        vegetation_analysis = parameter_analysis_composite.where(
+            water_composite_analysis.values <= 0.4
+        ).where(parameter_analysis_composite != -9999)
+
+        parameter_anomaly = vegetation_analysis - vegetation_baseline
 
         ## Compute
 
         parameter_anomaly_output = parameter_anomaly.compute()
 
-        ## Export products
+        ## Anomaly Threshold Product
 
-        bs_output = parameter_anomaly_output.bs
-        pv_output = parameter_anomaly_output.pv
-        npv_output = parameter_anomaly_output.npv
+        no_data_mask = np.isnan(parameter_anomaly_output)
+        a = parameter_anomaly_output
+        b = a.where((a < maxC) | (no_data_mask == True), 200)
+        c = b.where((b > minC) | (no_data_mask == True), 300)
+        d = c.where(((c >= maxC) | (c <= minC)) | (no_data_mask == True), 100)
+        param_thres_output = xr.DataArray.to_dataset(d, dim=None, name="param_thres")
 
         ## Write files
 
         result = []
 
-        file_name = path.join(path_prefix, "land_change.tiff")
+        file_name = path.join(path_prefix, "veg_change.tiff")
         ds = xr.DataArray.to_dataset(
             parameter_anomaly_output, dim=None, name="land_change"
         )
         import_export.export_xarray_to_geotiff(
             ds,
             file_name,
-            bands=["land_change"],
+            bands=["veg_change"],
             crs=output_projection,
             x_coord="longitude",
             y_coord="latitude",
         )
         result.append(file_name)
 
-        file_name = path.join(path_prefix, "bs_change.tiff")
-        ds = xr.DataArray.to_dataset(bs_output, dim=None, name="bs_change")
+        file_name = path.join(path_prefix, "param_thres.tiff")
+        ds = xr.DataArray.to_dataset(param_thres_output, dim=None, name="param_thres")
         import_export.export_xarray_to_geotiff(
             ds,
             file_name,
-            bands=["bs_change"],
-            crs=output_projection,
-            x_coord="longitude",
-            y_coord="latitude",
-        )
-        result.append(file_name)
-
-        file_name = path.join(path_prefix, "pv_change.tiff")
-        ds = xr.DataArray.to_dataset(pv_output, dim=None, name="bs_change")
-        import_export.export_xarray_to_geotiff(
-            ds,
-            file_name,
-            bands=["pv_change"],
-            crs=output_projection,
-            x_coord="longitude",
-            y_coord="latitude",
-        )
-        result.append(file_name)
-
-        file_name = path.join(path_prefix, "npv_change.tiff")
-        ds = xr.DataArray.to_dataset(npv_output, dim=None, name="npv_change")
-        import_export.export_xarray_to_geotiff(
-            ds,
-            file_name,
-            bands=["npv_change"],
+            bands=["param_thres"],
             crs=output_projection,
             x_coord="longitude",
             y_coord="latitude",

@@ -76,7 +76,7 @@ class FractionalCover(CubeQueryTask):
             "Satellite",
             DType.STRING,
             "Satellite to use.",
-            ["SENTINEL_2", "LANDSAT_4", "LANDSAT_5", "LANDSAT_7", "LANDSAT_8"],
+            ["LANDSAT_4", "LANDSAT_5", "LANDSAT_7", "LANDSAT_8"],
         ),
         Parameter(
             "res",
@@ -133,16 +133,13 @@ class FractionalCover(CubeQueryTask):
                 + "Please check load parameters for Baseline Dataset!"
             )
 
-        if platform in ["LANDSAT_8", "LANDSAT_7", "LANDSAT_5", "LANDSAT_4"]:
-            water_scenes = dc.load(
-                product=water_product,
-                measurements=["water_classification"],
-                time=time,
-                **query,
-            )
-            water_scenes = water_scenes.where(water_scenes >= 0)
-        else:
-            raise Exception("S2 does not yet have daskable water classification")
+        water_scenes = dc.load(
+            product=water_product,
+            measurements=["water_classification"],
+            time=time,
+            **query,
+        )
+        water_scenes = water_scenes.where(water_scenes >= 0)
 
         water_composite_mean = water_scenes.water_classification.mean(dim="time")
         water_composite_mean = water_composite_mean.rename(
