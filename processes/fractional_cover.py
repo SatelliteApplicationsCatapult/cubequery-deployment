@@ -167,13 +167,9 @@ class FractionalCover(CubeQueryTask):
         ## Write file
 
         file_name = path.join(path_prefix, "fractional_cover.tiff")
-        ds = xr.DataArray.to_dataset(
-            fractional_cover_output, dim=None, name="fractional_cover"
-        )
         import_export.export_xarray_to_geotiff(
-            ds,
+            fractional_cover_output,
             file_name,
-            bands=["fractional_cover"],
             crs=output_projection,
             x_coord="longitude",
             y_coord="latitude",

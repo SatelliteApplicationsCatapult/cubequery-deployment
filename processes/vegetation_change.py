@@ -315,13 +315,9 @@ class VegetationChange(CubeQueryTask):
         result = []
 
         file_name = path.join(path_prefix, "veg_change.tiff")
-        ds = xr.DataArray.to_dataset(
-            parameter_anomaly_output, dim=None, name="land_change"
-        )
         import_export.export_xarray_to_geotiff(
-            ds,
+            parameter_anomaly_output,
             file_name,
-            bands=["veg_change"],
             crs=output_projection,
             x_coord="longitude",
             y_coord="latitude",
@@ -329,9 +325,8 @@ class VegetationChange(CubeQueryTask):
         result.append(file_name)
 
         file_name = path.join(path_prefix, "param_thres.tiff")
-        ds = xr.DataArray.to_dataset(param_thres_output, dim=None, name="param_thres")
         import_export.export_xarray_to_geotiff(
-            ds,
+            param_thres_output,
             file_name,
             bands=["param_thres"],
             crs=output_projection,

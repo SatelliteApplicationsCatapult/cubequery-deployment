@@ -247,13 +247,9 @@ class LandChange(CubeQueryTask):
         result = []
 
         file_name = path.join(path_prefix, "land_change.tiff")
-        ds = xr.DataArray.to_dataset(
-            parameter_anomaly_output, dim=None, name="land_change"
-        )
         import_export.export_xarray_to_geotiff(
-            ds,
+            parameter_anomaly_output,
             file_name,
-            bands=["land_change"],
             crs=output_projection,
             x_coord="longitude",
             y_coord="latitude",
@@ -261,11 +257,9 @@ class LandChange(CubeQueryTask):
         result.append(file_name)
 
         file_name = path.join(path_prefix, "bs_change.tiff")
-        ds = xr.DataArray.to_dataset(bs_output, dim=None, name="bs_change")
         import_export.export_xarray_to_geotiff(
-            ds,
+            bs_output,
             file_name,
-            bands=["bs_change"],
             crs=output_projection,
             x_coord="longitude",
             y_coord="latitude",
@@ -273,11 +267,9 @@ class LandChange(CubeQueryTask):
         result.append(file_name)
 
         file_name = path.join(path_prefix, "pv_change.tiff")
-        ds = xr.DataArray.to_dataset(pv_output, dim=None, name="bs_change")
         import_export.export_xarray_to_geotiff(
-            ds,
+            pv_output,
             file_name,
-            bands=["pv_change"],
             crs=output_projection,
             x_coord="longitude",
             y_coord="latitude",
@@ -285,11 +277,9 @@ class LandChange(CubeQueryTask):
         result.append(file_name)
 
         file_name = path.join(path_prefix, "npv_change.tiff")
-        ds = xr.DataArray.to_dataset(npv_output, dim=None, name="npv_change")
         import_export.export_xarray_to_geotiff(
-            ds,
+            npv_output,
             file_name,
-            bands=["npv_change"],
             crs=output_projection,
             x_coord="longitude",
             y_coord="latitude",
