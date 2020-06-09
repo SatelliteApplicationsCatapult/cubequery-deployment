@@ -48,6 +48,7 @@ services:
       - APP_DEBUG=true
     ports:
       - "5000:5000"
+      - "5678:5678"
     volumes:
       - ./processes:/processes/processes
       - ./outputdata:/data
