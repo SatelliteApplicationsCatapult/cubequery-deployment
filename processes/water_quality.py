@@ -139,38 +139,20 @@ class WaterQuality(CubeQueryTask):
         result = []
 
         file_name = path.join(path_prefix, "mean_tsm.tiff")
-        ds = xr.DataArray.to_dataset(mean_tsm, dim=None, name="mean_tsm")
         import_export.export_xarray_to_geotiff(
-            ds,
-            file_name,
-            bands=["mean_tsm"],
-            crs=output_projection,
-            x_coord="x",
-            y_coord="y",
+            mean_tsm, file_name, crs=output_projection, x_coord="x", y_coord="y",
         )
         result.append(file_name)
 
         file_name = path.join(path_prefix, "min_tsm.tiff")
-        ds = xr.DataArray.to_dataset(min_tsm, dim=None, name="min_tsm")
         import_export.export_xarray_to_geotiff(
-            ds,
-            file_name,
-            bands=["min_tsm"],
-            crs=output_projection,
-            x_coord="x",
-            y_coord="y",
+            min_tsm, file_name, crs=output_projection, x_coord="x", y_coord="y",
         )
         result.append(file_name)
 
         file_name = path.join(path_prefix, "max_tsm.tiff")
-        ds = xr.DataArray.to_dataset(max_tsm, dim=None, name="max_tsm")
         import_export.export_xarray_to_geotiff(
-            ds,
-            file_name,
-            bands=["max_tsm"],
-            crs=output_projection,
-            x_coord="x",
-            y_coord="y",
+            max_tsm, file_name, crs=output_projection, x_coord="x", y_coord="y",
         )
         result.append(file_name)
 

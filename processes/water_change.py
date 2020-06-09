@@ -1,5 +1,4 @@
 import numpy as np
-import xarray as xr
 import dask
 from os import path
 
@@ -104,12 +103,16 @@ class WaterChange(CubeQueryTask):
         query = create_base_query(aoi, res, output_projection, aoi_crs, dask_chunks)
 
         all_measurements = ["green", "red", "blue", "nir", "swir1", "swir2"]
-        _baseline_product, _baseline_measurement, baseline_water_product = create_product_measurement(
-            platform_base, all_measurements
-        )
-        _analysis_product, _analysis_measurement, analysis_water_product = create_product_measurement(
-            platform_analysis, all_measurements
-        )
+        (
+            _baseline_product,
+            _baseline_measurement,
+            baseline_water_product,
+        ) = create_product_measurement(platform_base, all_measurements)
+        (
+            _analysis_product,
+            _analysis_measurement,
+            analysis_water_product,
+        ) = create_product_measurement(platform_analysis, all_measurements)
 
         baseline_time_period = (baseline_start_date, baseline_end_date)
         analysis_time_period = (analysis_start_date, analysis_end_date)
@@ -183,13 +186,9 @@ class WaterChange(CubeQueryTask):
         result = []
 
         file_name = path.join(path_prefix, "difference_range.tiff")
-        ds = xr.DataArray.to_dataset(
-            difference_range_output, dim=None, name="difference_range"
-        )
         import_export.export_xarray_to_geotiff(
-            ds,
+            difference_range_output,
             file_name,
-            bands=["difference_range"],
             crs=output_projection,
             x_coord="x",
             y_coord="y",
@@ -197,11 +196,9 @@ class WaterChange(CubeQueryTask):
         result.append(file_name)
 
         file_name = path.join(path_prefix, "difference.tiff")
-        ds = xr.DataArray.to_dataset(difference_output, dim=None, name="difference")
         import_export.export_xarray_to_geotiff(
-            ds,
+            difference_output,
             file_name,
-            bands=["difference"],
             crs=output_projection,
             x_coord="x",
             y_coord="y",

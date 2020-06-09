@@ -1,4 +1,3 @@
-import xarray as xr
 from os import path
 
 from cubequery.tasks import CubeQueryTask, Parameter, DType
@@ -102,11 +101,8 @@ class WaterPermanency(CubeQueryTask):
         ## Write files
 
         file_name = path.join(path_prefix, "water.tiff")
-        ds = xr.DataArray.to_dataset(
-            water_composite_mean_output, dim=None, name="water"
-        )
         import_export.export_xarray_to_geotiff(
-            ds,
+            water_composite_mean_output,
             file_name,
             bands=["water"],
             crs=output_projection,
