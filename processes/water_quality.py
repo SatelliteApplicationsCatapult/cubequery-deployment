@@ -76,7 +76,6 @@ class WaterQuality(CubeQueryTask):
         start_date,
         end_date,
         platform,
-        platform_analysis,
         res,
         aoi_crs,
         **kwargs,
