@@ -150,7 +150,7 @@ class FractionalCover(CubeQueryTask):
         )
 
         land_composite = geomedian(ds, product, all_measurements)
-        land_composite.rename({"x": "longitude", "y": "latitude"})
+        land_composite = land_composite.rename({"x": "longitude", "y": "latitude"})
 
         # Fractional Cover Classification
 
