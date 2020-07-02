@@ -125,14 +125,14 @@ class VegetationChange(CubeQueryTask):
         Parameter(
             "minC",
             "Indices Minimum Threshold",
-            DType.INT,
+            DType.FLOAT,
             "Typical Values: NDVI=-0.7, EVI=-1.75, FC=-70",
             [-100, 100],
         ),
         Parameter(
             "maxC",
             "Indices Maximum Threshold",
-            DType.INT,
+            DType.FLOAT,
             "Typical Values: NDVI=-0.2, EVI=-0.5, FC=-20",
             [-100, 100],
         ),

@@ -1,6 +1,7 @@
-from cubequery_server:latest
+FROM cubequery_server:latest
 
-RUN /opt/conda/bin/pip install git+https://github.com/SatelliteApplicationsCatapult/datacube-utilities.git#egg=datacube_utilities
+RUN /opt/conda/bin/pip uninstall datacube_utilities
+RUN /opt/conda/bin/pip install git+https://github.com/emilyselwood/datacube-utilities.git@test-branch#egg=datacube_utilities
 
 COPY processes/ /processes/processes
 COPY datacube.conf /etc/datacube.conf
