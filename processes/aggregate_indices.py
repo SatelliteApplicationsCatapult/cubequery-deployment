@@ -2,9 +2,12 @@ import xarray as xr
 import dask
 from os import path
 
+
+
 from cubequery.tasks import CubeQueryTask, Parameter, DType
 from datacube_utilities import import_export
 from datacube_utilities.masking import mask_good_quality
+from datacube_utilities.createindices import NDVI, NDWI, EVI
 from datacube_utilities.dc_mosaic import (
     create_max_ndvi_mosaic,
     create_median_mosaic,
@@ -81,7 +84,6 @@ class AggregateIndices(CubeQueryTask):
         start_date,
         end_date,
         platform,
-        platform_analysis,
         res,
         aoi_crs,
         mosaic_type,
@@ -133,7 +135,9 @@ class AggregateIndices(CubeQueryTask):
 
         # Calculate Indices
 
-        indices_composite = indices(mosaiced_composite)
+        indices_function = {"NDVI": NDVI, "NDWI": NDWI, "EVI": EVI}
+        indices_compositor = indices_function[indices]
+        indices_composite = indices_compositor(mosaiced_composite)
 
         ## Compute
 
