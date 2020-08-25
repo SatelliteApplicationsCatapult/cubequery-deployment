@@ -24,6 +24,7 @@ class WaterPermanency(CubeQueryTask):
             "Output Projection",
             DType.STRING,
             "Projection to generate the output in.",
+            ["EPSG:3460"]
         ),
         Parameter("start_date", "Start Date", DType.DATE, "Start date of the period."),
         Parameter("end_date", "End Date", DType.DATE, "End date of the period."),
@@ -41,7 +42,7 @@ class WaterPermanency(CubeQueryTask):
             "Pixel resution in meters.",
             [0, 500],
         ),
-        Parameter("aoi_crs", "AIO CRS", DType.STRING, "CRS of the Area of Interest."),
+        Parameter("aoi_crs", "AIO CRS", DType.STRING, "CRS of the Area of Interest.", ["EPSG:4326"]),
     ]
 
     CubeQueryTask.cal_significant_kwargs(parameters)

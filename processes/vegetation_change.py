@@ -61,6 +61,7 @@ class VegetationChange(CubeQueryTask):
             "Output Projection",
             DType.STRING,
             "Projection to generate the output in.",
+            ["EPSG:3460"]
         ),
         Parameter(
             "baseline_start_date",
@@ -107,7 +108,7 @@ class VegetationChange(CubeQueryTask):
             "Pixel resution in meters.",
             [0, 500],
         ),
-        Parameter("aoi_crs", "AIO CRS", DType.STRING, "CRS of the Area of Interest."),
+        Parameter("aoi_crs", "AIO CRS", DType.STRING, "CRS of the Area of Interest.", ["EPSG:4326"]),
         Parameter(
             "mosaic_type",
             "Mosaic Type",
