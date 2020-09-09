@@ -23,7 +23,7 @@ class ArchiveAccess(CubeQueryTask):
             "Projection to generate the output in.",
             ["EPSG:3460"]
         ),
-        Parameter("year", "Year", DType.STRIGN, "The year you are looking for."),
+        Parameter("year", "Year", DType.INT, "The year you are looking for.", [1970,2017]),
         Parameter(
             "platform",
             "Satellite",
@@ -55,25 +55,25 @@ class ArchiveAccess(CubeQueryTask):
         **kwargs,
     ):
   
-    dask_chunks = dict(time=10, x=600, y=600)
+        dask_chunks = dict(time=10, x=600, y=600)
 
-    query = create_base_query(aoi, res, output_projection, aoi_crs, dask_chunks)
-    
-    start_time = datetime.strptime(f"{year}-01-01", "%Y-%m-%d")
-    end_time = datetime.strptime(f"{year}-12-31", "%Y-%m-%d")
+        query = create_base_query(aoi, res, output_projection, aoi_crs, dask_chunks)
+        
+        start_time = datetime.strptime(f"{year}-01-01", "%Y-%m-%d")
+        end_time = datetime.strptime(f"{year}-12-31", "%Y-%m-%d")
 
-    data = dc.load(time=(start_time, end_time), product="ls8_geomedian_annual", **query)
+        data = dc.load(time=(start_time, end_time), product="ls8_geomedian_annual", **query)
 
-    data = data.rename({"x": "longitude", "y": "latitude"})
-    data = data.mean(dim="time") # Should be safe as there should only ever be one entry and we just need to get rid of the dim
-    file_name = path.join(path_prefix, f"archive-{year}.tiff")
+        data = data.rename({"x": "longitude", "y": "latitude"})
+        data = data.mean(dim="time") # Should be safe as there should only ever be one entry and we just need to get rid of the dim
+        file_name = path.join(path_prefix, f"archive-{year}.tiff")
 
-    import_export.export_xarray_to_geotiff(
-        data,
-        file_name,
-        crs=output_projection,
-        x_coord="longitude",
-        y_coord="latitude",
-    )
+        import_export.export_xarray_to_geotiff(
+            data,
+            file_name,
+            crs=output_projection,
+            x_coord="longitude",
+            y_coord="latitude",
+        )
 
-    return [file_name]
+        return [file_name]
