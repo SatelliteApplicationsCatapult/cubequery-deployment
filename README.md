@@ -1,8 +1,8 @@
 # Cube Query Deployment
 
-This is both an example project to show how to deploy the cube query system and a real deployment.
+This is both an example project to show how to deploy the [cubequery](https://github.com/SatelliteApplicationsCatapult/cubequery) system and a real deployment.
 
-This shows pulling in two library modules (sac_utils and data_cube_utilities) and adding some processors.
+This shows pulling in two library modules (sac_utils and data_cube_utilities) and adding some processors. 
 
 ## Building and Running
 
@@ -14,6 +14,8 @@ This shows pulling in two library modules (sac_utils and data_cube_utilities) an
 1) Run `docker-compose` up to start the environment.
 
 The server should be able to live reload when changes are made, however the worker is not able to do so. That will need manually restarting.
+
+For a production environment check out our [helm charts](https://github.com/SatelliteApplicationsCatapult/helm-charts)
 
 ## Converting a notebook to a cubequery process
 
@@ -34,4 +36,4 @@ While a note book is great for developing a process. It is not so great when run
 1) Create a method called `generate_product` that takes self, a datacube instance, and the path prefix to be used for any outputs. Along with each of the defined parameters from the earlier list as arguments.
 1) In this method implement the process
 1) The method needs to return a list of output files that should be kept when the processing is done. These should include the path prefix passed in to the function. It is important to use the path prefix when generating output data so that each task run gets a unique output folder. Otherwise your process may end up overwriting some of the work of another processor if two are running at the same time.
-1) Rebuild and re-deploy all the containers. Make sure that you deploy the workers before the server so that the server does not end up able to request processes that works don't know about yet.
+1) Rebuild and re-deploy all the containers.
