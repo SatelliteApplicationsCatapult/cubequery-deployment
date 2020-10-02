@@ -33,10 +33,12 @@ class NDVIAnomaly(CubeQueryTask):
     """
 
     display_name = "NDVI Anomaly"
-    description = "NDVI anomaly, showing changes in NDVI between two time periods."
+    description = "Provides a measure of changes in how densely vegetated a surface is between two time periods."
+    img_url = "https://arcgis01.satapps.org/portal//sharing/rest/content/items/a499849ccd1f4c7fb0403b4c719f9dc1/resources/NDVI%20anomaly.png?v=1601648787363"
+    info_url = "https://arcgis01.satapps.org/portal/apps/sites/?fromEdit=true#/data/pages/data-cube"
 
     parameters = [
-        Parameter("aoi", "AOI", DType.WKT, "Area of interest"),
+        Parameter("aoi", "Area Of Interest", DType.WKT, "Area of interest"),
         Parameter(
             "output_projection",
             "Output Projection",
@@ -86,10 +88,10 @@ class NDVIAnomaly(CubeQueryTask):
             "res",
             "resolution in meters",
             DType.INT,
-            "Pixel resution in meters",
-            [0, 500],
+            "Pixel resolution in meters",
+            [10, 500],
         ),
-        Parameter("aoi_crs", "AIO CRS", DType.STRING, "CRS of the Area of Interest", ["EPSG:4326"]),
+        Parameter("aoi_crs", "Area Of Interest CRS", DType.STRING, "CRS of the Area of Interest", ["EPSG:4326"]),
         Parameter(
             "mosaic_type",
             "Mosaic Type",
