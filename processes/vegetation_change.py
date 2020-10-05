@@ -52,10 +52,12 @@ class VegetationChange(CubeQueryTask):
     """
 
     display_name = "Vegetation Change"
-    description = "Vegetation Change derived from changes in NDVI, EVI, or Fractional Cover cover between two time periods."
+    description = "Identifies changes in vegetation over time, showing where gains and losses are as well as enabling a threshold of change to filter specific types of change."
+    img_url = "https://arcgis01.satapps.org/portal//sharing/rest/content/items/a499849ccd1f4c7fb0403b4c719f9dc1/resources/Vegetation%20change.png?v=1601648787376"
+    info_url = "https://arcgis01.satapps.org/portal/apps/sites/?fromEdit=true#/data/pages/data-cube"
 
     parameters = [
-        Parameter("aoi", "AOI", DType.WKT, "Area of interest."),
+        Parameter("aoi", "Area Of Interest", DType.WKT, "Area of interest."),
         Parameter(
             "output_projection",
             "Output Projection",
@@ -105,10 +107,10 @@ class VegetationChange(CubeQueryTask):
             "res",
             "Resolution in meters",
             DType.INT,
-            "Pixel resution in meters.",
-            [0, 500],
+            "Pixel resolution in meters.",
+            [10, 500],
         ),
-        Parameter("aoi_crs", "AIO CRS", DType.STRING, "CRS of the Area of Interest.", ["EPSG:4326"]),
+        Parameter("aoi_crs", "Area Of Interest CRS", DType.STRING, "CRS of the Area of Interest.", ["EPSG:4326"]),
         Parameter(
             "mosaic_type",
             "Mosaic Type",
