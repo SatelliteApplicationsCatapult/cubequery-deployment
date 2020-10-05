@@ -17,7 +17,7 @@ class AnnualDataProducts(CubeQueryTask):
 
     display_name = "Annual Data Products"
     description = """
-    Provides an average cloud-free image of surface reflectance over a time period.
+    The geomedian is a multi-dimensional median of surface reflectance for each of the spectral measurements or bands over a time period, it can be used to obtain a cloud-free image
     """
     img_url = "https://arcgis01.satapps.org/portal//sharing/rest/content/items/a499849ccd1f4c7fb0403b4c719f9dc1/resources/Geomedian.png?v=1601652955166"
     info_url = "https://arcgis01.satapps.org/portal/apps/sites/?fromEdit=true#/data/pages/data-cube"
