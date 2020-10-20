@@ -20,6 +20,11 @@ from datacube_utilities.query import (
     is_dataset_empty,
 )
 
+    
+def NDDI(dataset):
+    aNDVI = NDVI(dataset)
+    aNDWI = NDWI(dataset)
+    return (aNDVI - aNDWI)/(aNDVI + aNDWI)
 
 class AggregateIndices(CubeQueryTask):
     """
@@ -72,7 +77,7 @@ class AggregateIndices(CubeQueryTask):
             "Indices type",
             DType.STRING,
             "The indices to calculate.",
-            ["EVI", "NDVI", "NDWI"],
+            ["EVI", "NDVI", "NDWI", "NDDI"],
         ),
     ]
 
@@ -138,7 +143,7 @@ class AggregateIndices(CubeQueryTask):
 
         # Calculate Indices
 
-        indices_function = {"NDVI": NDVI, "NDWI": NDWI, "EVI": EVI}
+        indices_function = {"NDVI": NDVI, "NDWI": NDWI, "EVI": EVI, "NDDI": NDDI}
         indices_compositor = indices_function[indices]
         indices_composite = indices_compositor(mosaiced_composite)
 
