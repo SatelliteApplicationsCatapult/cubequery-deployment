@@ -72,11 +72,16 @@ class AggregateIndices(CubeQueryTask):
             "Indices type",
             DType.STRING,
             "The indices to calculate.",
-            ["EVI", "NDVI", "NDWI"],
+            ["EVI", "NDVI", "NDWI", "NDDI"],
         ),
     ]
 
     CubeQueryTask.cal_significant_kwargs(parameters)
+    
+    def NDDI(dataset):
+        aNDVI = NDVI(dataset)
+        aNDWI = NDWI(dataset)
+        return (aNDVI - aNDWI)/(aNDVI + aNDWI)
 
     def generate_product(
         self,
@@ -138,7 +143,7 @@ class AggregateIndices(CubeQueryTask):
 
         # Calculate Indices
 
-        indices_function = {"NDVI": NDVI, "NDWI": NDWI, "EVI": EVI}
+        indices_function = {"NDVI": NDVI, "NDWI": NDWI, "EVI": EVI, "NDDI": NDDI}
         indices_compositor = indices_function[indices]
         indices_composite = indices_compositor(mosaiced_composite)
 
