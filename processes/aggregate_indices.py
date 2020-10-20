@@ -20,6 +20,11 @@ from datacube_utilities.query import (
     is_dataset_empty,
 )
 
+    
+def NDDI(dataset):
+    aNDVI = NDVI(dataset)
+    aNDWI = NDWI(dataset)
+    return (aNDVI - aNDWI)/(aNDVI + aNDWI)
 
 class AggregateIndices(CubeQueryTask):
     """
@@ -77,11 +82,6 @@ class AggregateIndices(CubeQueryTask):
     ]
 
     CubeQueryTask.cal_significant_kwargs(parameters)
-    
-    def NDDI(dataset):
-        aNDVI = NDVI(dataset)
-        aNDWI = NDWI(dataset)
-        return (aNDVI - aNDWI)/(aNDVI + aNDWI)
 
     def generate_product(
         self,
