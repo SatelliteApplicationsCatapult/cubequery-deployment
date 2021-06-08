@@ -1,5 +1,14 @@
 # Cube Query Deployment
 
+
+THIS PROJECT IS NO LONGER REQUIRED OR MAINTAINED. DO NOT USE OR EXPECT IT TO WORK. 
+
+It is only left here as a historical artifact. Go and see the [cubequery](https://github.com/SatelliteApplicationsCatapult/cubequery) project
+to find out how things now work.
+
+*********************************************************************
+
+
 This is both an example project to show how to deploy the [cubequery](https://github.com/SatelliteApplicationsCatapult/cubequery) system and a real deployment.
 
 This shows pulling in two library modules (sac_utils and data_cube_utilities) and adding some processors. 
